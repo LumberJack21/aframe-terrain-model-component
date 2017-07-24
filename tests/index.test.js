@@ -3,23 +3,41 @@ require('aframe');
 require('../index.js');
 var entityFactory = require('./helpers').entityFactory;
 
-suite('terrain-model component', function () {
+suite('color=terrain-model component', function () {
   var component;
   var el;
 
   setup(function (done) {
+    // Standard timeout is sometimes not enough
+    this.timeout(5000);
     el = entityFactory();
-    el.addEventListener('componentinitialized', function (evt) {
-      if (evt.detail.name !== 'terrain-model') { return; }
-      component = el.components['terrain-model'];
+    el.addEventListener('object3dset', function (evt) {
+      if (evt.detail.type !== 'terrain') { return; }
+      component = el.components['color-terrain-model'];
       done();
     });
-    el.setAttribute('terrain-model', {});
+    el.setAttribute('color-terrain-model', {});
   });
 
-  suite('wireframe property', function () {
-    test('is false', function () {
-      assert.equal(el.getAttribute("terrain-model", "wireframe").wireframe, false);
-    });
-  });
+  suite('removal', function () {
+    test('disposes terrain geometry', function () {
+      var geometry = el.getObject3D('terrain').geometry;
+      var disposeSpy = this.sinon.spy(geometry, 'dispose');
+      el.removeAttribute('color-terrain-model');
+      assert.ok(disposeSpy.called);
+    })
+
+    test('disposes terrain material', function () {
+      var material = el.getObject3D('terrain').material;
+      var disposeSpy = this.sinon.spy(material, 'dispose');
+      el.removeAttribute('color-terrain-model');
+      assert.ok(disposeSpy.called);
+    })
+
+    test('removes object3D', function () {
+      el.removeAttribute('color-terrain-model');
+      var terrain = el.getObject3D('terrain');
+      assert.equal(terrain, undefined);
+    })
+  })
 });
